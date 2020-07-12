@@ -8,8 +8,8 @@
  */
 
 const role = require('./role.enum');
-const roleBuilder = require('./role.builder');
 const nameGenerator = require('./nameGenerator');
+const roleRepairer = require('./role.repairer');
 const sourceFinder = require('./sourceFinder');
 
 module.exports = {
@@ -28,29 +28,31 @@ module.exports = {
         }
     
         if (creep.memory.working == true) {
-            //Prioritize Ramparts
-            let structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                filter: x => x.structureType == STRUCTURE_RAMPART
-                                            && x.hits < x.hitsMax * 0.01     //Repair ramparts up to 1%
+            let walls = creep.room.find(FIND_STRUCTURES, {
+                filter: x => x.structureType == STRUCTURE_WALL
+                            || x.structureType == STRUCTURE_RAMPART
             });
-            if (structure === null) {
-                structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-                    filter: x => x.hits < x.hitsMax //Needs repair
-                                && (creep.memory.repairWalls    //Creep is authorized to repair walls
-                                    || (x.structureType != STRUCTURE_WALL
-                                            && x.structureType != STRUCTURE_RAMPART
-                                        )
-                                    )
+
+            let target = null;
+
+            //Repair all walls up to a certain percentage before upgrading to full health
+            let resolution = 0.0001;
+            for (let percentage = resolution; percentage <= 1; percentage += resolution) {
+                target = creep.pos.findClosestByPath(walls, {
+                    filter: x => x.hits / x.hitsMax < percentage
                 });
+                if (target) {
+                    break;
+                }
             }
 
-            if (structure != null) {
-                if (creep.repair(structure) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(structure);
+            if (target) {
+                if (creep.repair(target) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target);
                 }
             }
             else {
-                roleBuilder.run(creep);
+                roleRepairer.run(creep);
             }
         }
         else {
@@ -62,13 +64,13 @@ module.exports = {
         }
     },
     spawn: function(spawn, repairWalls) {
-        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('repairer'), {
-            role: role.repairer,
+        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('wallWart'), {
+            role: role.wallWart,
             working: false,
             repairWalls: repairWalls === undefined ? false : repairWalls
         });
         if (isNaN(name)) {
-            console.log("Spawning repairer " + name);
+            console.log("Spawning wall wart " + name);
         }
     },
     cost: 300

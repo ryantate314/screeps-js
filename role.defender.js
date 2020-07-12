@@ -3,15 +3,17 @@
  * module.exports.thing = 'a thing';
  *
  * You can import it from another modules like this:
- * var mod = require('role.enum');
+ * var mod = require('role.defender');
  * mod.thing == 'a thing'; // true
  */
 
 module.exports = {
-    harvester: 'harvester',
-    builder: 'builder',
-    upgrader: 'upgrader',
-    repairer: 'repairer',
-    miner: 'miner',
-    wallWart: 'wallWart'
+    /**
+     * 
+     * @param {Creep} creep 
+     */
+    run: function(creep) {
+        let hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
+        
+    }
 };

@@ -11,6 +11,7 @@ let roleUpgrader = require('role.upgrader');
 const roleHarvester = require('./role.harvester');
 const role = require('./role.enum');
 const nameGenerator = require('./nameGenerator');
+const sourceFinder = require('./sourceFinder');
 
 module.exports = {
     /**
@@ -30,9 +31,9 @@ module.exports = {
     
         if (creep.memory.working == true) {
             let site = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, {
-                filter: x => x.structureType != STRUCTURE_CONTAINER
+                filter: x => true
             });
-            if (site != undefined) {
+            if (site != null) {
                 if (creep.build(site) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(site);
                 }
@@ -52,15 +53,15 @@ module.exports = {
                 
             // }
             
-            let source = creep.pos.findClosestByPath(FIND_SOURCES);
-            let harvestResult = creep.harvest(source);
+            let source = sourceFinder.findSource(creep);
+            let harvestResult = source.extract();
             if (harvestResult == ERR_NOT_IN_RANGE) {
-                creep.moveTo(source);
+                creep.moveTo(source.source);
             }
         }
     },
     spawn: function(spawn) {
-        let name = spawn.createCreep([WORK, CARRY, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('builder'), {
+        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('builder'), {
             role: role.builder,
             working: false
         });

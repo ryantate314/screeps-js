@@ -3,6 +3,8 @@ const roleUpgrader = require('role.upgrader');
 const roleBuilder = require('./role.builder');
 const roleRepairer = require('./role.repairer');
 const role = require('./role.enum');
+const roleMiner = require('./role.miner');
+const roleWallWart = require('./role.wallWart');
 
 module.exports.loop = function() {
 
@@ -16,20 +18,28 @@ module.exports.loop = function() {
 
     let spawn = Game.spawns.Spawn1;
 
-    const minNumberOfHarvesters = 4;
-    const minNumberOfUpgraders = 4;
-    const minNumberOfRepairers = 2;
-    const minNumberOfBuilders = 5;
-    const maxUnits = minNumberOfHarvesters + minNumberOfUpgraders + minNumberOfRepairers + minNumberOfRepairers;
+    defendRoom(spawn.room.name);
+
+    const minNumberOfHarvesters = 3;
+    const minNumberOfUpgraders = 3;
+    const minNumberOfRepairers = 4;
+    const minNumberOfWallWarts = 1;
+    const minNumberOfBuilders = 3;
+    const numContainers = spawn.room.find(FIND_STRUCTURES, {
+        filter: x => x.structureType == STRUCTURE_CONTAINER
+    }).length;
+    const maxUnits = minNumberOfHarvesters + minNumberOfUpgraders + minNumberOfRepairers + minNumberOfBuilders + minNumberOfWallWarts + numContainers;
 
     let numberOfHarvestors = _.sum(Game.creeps, x => x.memory.role == role.harvester);
     let numberOfUpgraders = _.sum(Game.creeps, x => x.memory.role == role.upgrader);
     let numberOfBuilders = _.sum(Game.creeps, x => x.memory.role == role.builder);
-    var numberOfRepairers = _.sum(Game.creeps, x => x.memory.role == role.repairer)
-    var numberOfCreeps = _.sum(Game.creeps);
+    let numberOfRepairers = _.sum(Game.creeps, x => x.memory.role == role.repairer);
+    let numberOfWallWarts = _.sum(Game.creeps, x => x.memory.role == role.wallWart);
+    let numberOfMiners = _.sum(Game.creeps, x => x.memory.role == role.miner);
+    let numberOfCreeps = Object.keys(Game.creeps).length;
 
     if (numberOfHarvestors < minNumberOfHarvesters) {
-        if (numberOfHarvestors > 2) {
+        if (numberOfHarvestors >= 1) {
             roleHarvester.spawn(spawn);
         }
         else {
@@ -42,24 +52,48 @@ module.exports.loop = function() {
     else if (numberOfRepairers < minNumberOfRepairers) {
         roleRepairer.spawn(spawn);
     }
-    //numberOfBuilders < minNumberOfBuilders && 
-    else if (numberOfCreeps < maxUnits) {
+    else if (numberOfBuilders < minNumberOfBuilders) {
         roleBuilder.spawn(spawn);
+    }
+    else if (numberOfMiners < numContainers) {
+        roleMiner.spawn(spawn);
+    }
+    else if (numberOfWallWarts < minNumberOfWallWarts && numberOfCreeps < maxUnits) {
+        roleWallWart.spawn(spawn);
     }
 
     for (let name in Game.creeps) {
         let creep = Game.creeps[name];
-        if (creep.memory.role == role.harvester) {
-            roleHarvester.run(spawn, Game.creeps[name]);
+        switch (creep.memory.role) {
+            case role.harvester:
+                roleHarvester.run(creep);
+                break;
+            case role.upgrader:
+                roleUpgrader.run(creep);
+                break;
+            case role.builder:
+                roleBuilder.run(creep);
+                break;
+            case role.repairer:
+                roleRepairer.run(creep);
+                break;
+            case role.miner:
+                roleMiner.run(creep);
+                break;
+            case role.wallWart:
+                roleWallWart.run(creep);
+                break;
         }
-        else if (creep.memory.role == role.upgrader) {
-            roleUpgrader.run(creep)
-        }
-        else if (creep.memory.role == role.builder) {
-            roleBuilder.run(creep);
-        }
-        else if (creep.memory.role == role.repairer) {
-            roleRepairer.run(creep);
+    }
+
+    function defendRoom(roomName) {
+        var hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
+        if(hostiles.length > 0) {
+            //var username = hostiles[0].owner.username;
+            //Game.notify(`User ${username} spotted in room ${roomName}`);
+            var towers = Game.rooms[roomName].find(
+                FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
+            towers.forEach(tower => tower.attack(hostiles[0]));
         }
     }
     

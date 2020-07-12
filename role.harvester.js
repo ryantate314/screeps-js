@@ -1,5 +1,6 @@
 const role = require('./role.enum');
 const nameGenerator = require('./nameGenerator');
+const sourceFinder = require('./sourceFinder');
 
 /*
  * Harvest energy and take it to spawn
@@ -10,7 +11,7 @@ module.exports = {
      * @param {*} spawn 
      * @param {Creep} creep 
      */
-    run: function(spawn, creep) {
+    run: function(creep) {
         if (creep.memory.working == true && creep.carry.energy == 0) {
             //Finished emptying
             creep.memory.working = false;
@@ -20,9 +21,24 @@ module.exports = {
         }
     
         if (creep.memory.working == true) {
-            let structure = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
-                filter: x => x.energy < x.energyCapacity
+            //Carry power to either spawn/extensions, or towers.
+            let spawning = creep.room.find(FIND_STRUCTURES, {
+                filter: x => (x.structureType == STRUCTURE_SPAWN
+                                || x.structureType == STRUCTURE_EXTENSION)
+                            && x.energy < x.energyCapacity
             });
+            let towers = creep.room.find(FIND_MY_STRUCTURES, {
+                filter: x => x.structureType == STRUCTURE_TOWER
+                            && x.energy < x.energyCapacity
+            });
+            //By default, prioritize closest structure
+            let structures = spawning.concat(towers);
+
+            //Prioritize spawning if energy is at half capacity
+            if (creep.room.energyAvailable < creep.room.energyCapacityAvailable / 2) {
+                structures = spawning;
+            }
+            let structure = creep.pos.findClosestByPath(structures);
             if (structure != undefined) {
                 if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(structure);
@@ -30,12 +46,26 @@ module.exports = {
             }
         }
         else {
-            var source = creep.pos.findClosestByPath(FIND_SOURCES, {
-                filter: x => x.pos.x != 35 //Ignore energy at the bottom of the map, which is reserved for upgrading
+            //Looked for dropped energy first
+            let source = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
+                filter: x => x.resourceType == RESOURCE_ENERGY 
+                            && creep.pos.getRangeTo(x) < 10
             });
-            if (source != undefined) {
-                if (creep.harvest(source) == ERR_NOT_IN_RANGE) {
+            if (source) {
+                if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(source);
+                }
+            }
+            else {
+                //Look for energy source
+                //Ignore energy at the bottom of the map, which is reserved for upgrading
+                source = sourceFinder.findSource(creep, x => x.pos.x != 35);
+                if (source) {
+                    //Found source
+                    let result = source.extract();
+                    if (result == ERR_NOT_IN_RANGE) {
+                        creep.moveTo(source.source);
+                    }
                 }
             }
         }
@@ -50,7 +80,7 @@ module.exports = {
         }
     },
     spawnBasic: function(spawn) {
-        let name = spawn.createCreep([WORK, CARRY, MOVE], undefined, {
+        let name = spawn.createCreep([WORK, CARRY, MOVE], nameGenerator.nameCreep('basicHarvester'), {
             role: role.harvester,
             working: false
         });
