@@ -75,7 +75,7 @@ module.exports = {
                     //Doing this inside filter() because manually building up an array wouldn't work with findClosestByPath()
                     let claimed = false;
                     for (let miner of miners) {
-                        if (miner.memory.container == x) {
+                        if (miner.memory.containerId == x.id) {
                             claimed = true;
                             break;
                         }

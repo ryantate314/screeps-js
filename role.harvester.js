@@ -31,12 +31,19 @@ module.exports = {
                 filter: x => x.structureType == STRUCTURE_TOWER
                             && x.energy < x.energyCapacity
             });
+            let storage = creep.room.find(FIND_STRUCTURES, {
+                filter: x => x.structureType == STRUCTURE_STORAGE
+                            && x.store[RESOURCE_ENERGY] < x.store.getCapacity(RESOURCE_ENERGY)
+            });
             //By default, prioritize closest structure
             let structures = spawning.concat(towers);
 
             //Prioritize spawning if energy is at half capacity
             if (creep.room.energyAvailable < creep.room.energyCapacityAvailable / 2) {
                 structures = spawning;
+            }
+            else if (spawning.length == 0 && towers.length == 0 && storage.length > 0) {
+                structures = storage;
             }
             let structure = creep.pos.findClosestByPath(structures);
             if (structure != undefined) {
@@ -58,8 +65,13 @@ module.exports = {
             }
             else {
                 //Look for energy source
+                let filter = x => true;
+                //If the room is full, deposit in storage, not pull from storage. Prevents pulling out and immediately putting it back in.
+                if (creep.room.energyAvailable == creep.room.energyCapacityAvailable) {
+                    filter = x => x.structureType != STRUCTURE_STORAGE;
+                }
                 //Ignore energy at the bottom of the map, which is reserved for upgrading
-                source = sourceFinder.findSource(creep, x => x.pos.x != 35);
+                source = sourceFinder.findSource(creep, x => x.pos.x != 35 && filter(x));
                 if (source) {
                     //Found source
                     let result = source.extract();
@@ -71,7 +83,8 @@ module.exports = {
         }
     },
     spawn: function(spawn) {
-        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('harvester'), {
+        //Early game adds 2 work and 2 carry
+        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('harvester'), {
             role: role.harvester,
             working: false
         });

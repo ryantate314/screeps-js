@@ -64,7 +64,7 @@ module.exports = {
         }
     },
     spawn: function(spawn, repairWalls) {
-        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('wallWart'), {
+        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('wallWart'), {
             role: role.wallWart,
             working: false,
             repairWalls: repairWalls === undefined ? false : repairWalls

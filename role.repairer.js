@@ -28,19 +28,23 @@ module.exports = {
         }
     
         if (creep.memory.working == true) {
+
+            //If a creep wanders outside its spawn room, send it back
+            if (creep.memory.spawnRoom && creep.room.name != creep.memory.spawnRoom) {
+                creep.moveTo(new RoomPosition(25, 25, creep.memory.spawnRoom));
+                return;
+            }
+
             //Prioritize Ramparts
             let structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                 filter: x => x.structureType == STRUCTURE_RAMPART
-                                            && x.hits < x.hitsMax * 0.01     //Repair ramparts up to 1%
+                                            && x.hits < x.hitsMax * 0.001     //Repair ramparts up to 0.1%
             });
             if (structure === null) {
                 structure = creep.pos.findClosestByPath(FIND_STRUCTURES, {
                     filter: x => x.hits < x.hitsMax //Needs repair
-                                && (creep.memory.repairWalls    //Creep is authorized to repair walls
-                                    || (x.structureType != STRUCTURE_WALL
-                                            && x.structureType != STRUCTURE_RAMPART
-                                        )
-                                    )
+                                && x.structureType != STRUCTURE_WALL
+                                && x.structureType != STRUCTURE_RAMPART
                 });
             }
 
@@ -62,10 +66,10 @@ module.exports = {
         }
     },
     spawn: function(spawn, repairWalls) {
-        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('repairer'), {
+        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('repairer'), {
             role: role.repairer,
             working: false,
-            repairWalls: repairWalls === undefined ? false : repairWalls
+            spawnRoom: spawn.room.name
         });
         if (isNaN(name)) {
             console.log("Spawning repairer " + name);

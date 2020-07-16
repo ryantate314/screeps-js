@@ -19,7 +19,6 @@ module.exports = {
      * @param {Creep} creep 
      */
     run: function(creep) {
-        let controller = creep.room.controller;
 
         if (creep.memory.working == true && creep.carry.energy == 0) {
             //Finished emptying
@@ -30,6 +29,13 @@ module.exports = {
         }
     
         if (creep.memory.working == true) {
+
+            //If a creep wanders outside its spawn room, send it back
+            if (creep.memory.spawnRoom && creep.room.name != creep.memory.spawnRoom) {
+                creep.moveTo(new RoomPosition(25, 25, creep.memory.spawnRoom));
+                return;
+            }
+
             let site = creep.pos.findClosestByPath(FIND_CONSTRUCTION_SITES, {
                 filter: x => true
             });
@@ -60,10 +66,15 @@ module.exports = {
             }
         }
     },
+    /**
+     * 
+     * @param {StructureSpawn} spawn 
+     */
     spawn: function(spawn) {
-        let name = spawn.createCreep([WORK, WORK, CARRY, CARRY, MOVE, MOVE], nameGenerator.nameCreep('builder'), {
+        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('builder'), {
             role: role.builder,
-            working: false
+            working: false,
+            spawnRoom: spawn.room.name
         });
         if (isNaN(name)) {
             console.log("Spawning builder " + name);

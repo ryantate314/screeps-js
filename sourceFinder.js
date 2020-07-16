@@ -11,7 +11,8 @@ module.exports = {
         filter = filter === undefined ? x => true : filter;
 
         let container = creep.pos.findClosestByPath(FIND_STRUCTURES, {
-            filter: x => x.structureType == STRUCTURE_CONTAINER
+            filter: x => (x.structureType == STRUCTURE_CONTAINER
+                        || x.structureType == STRUCTURE_STORAGE)
                 && x.store[RESOURCE_ENERGY] > 0
                     && filter(x)
         });
@@ -27,8 +28,8 @@ module.exports = {
         if (container) {
             let containerDistance = creep.pos.getRangeTo(container);
             //Choose the container if it's closer, as the crow files. Would like to do this by path length
-            if (containerDistance < sourceDistance) {
-                console.log(creep.name + " found a container");
+            if (containerDistance < sourceDistance + 2) {
+                //console.log(creep.name + " found a container");
                 source = container;
                 extract = () => {
                     return creep.withdraw(container, RESOURCE_ENERGY);
