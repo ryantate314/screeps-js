@@ -22,9 +22,9 @@ module.exports.loop = function() {
 
     const minNumberOfHarvesters = 3;
     const minNumberOfUpgraders = 3;
-    const minNumberOfRepairers = 5;
+    const minNumberOfRepairers = 3;
     const minNumberOfBuilders = 3;
-    const minNumberOfWallWarts = 1;
+    const minNumberOfWallWarts = 2;
     const numContainers = spawn.room.find(FIND_STRUCTURES, {
         filter: x => x.structureType == STRUCTURE_CONTAINER
     }).length;

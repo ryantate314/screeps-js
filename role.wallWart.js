@@ -11,6 +11,7 @@ const role = require('./role.enum');
 const nameGenerator = require('./nameGenerator');
 const roleRepairer = require('./role.repairer');
 const sourceFinder = require('./sourceFinder');
+const bodyCosts = require('./bodyCosts');
 
 module.exports = {
     /**
@@ -63,11 +64,10 @@ module.exports = {
             }
         }
     },
-    spawn: function(spawn, repairWalls) {
-        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('wallWart'), {
+    spawn: function(spawn) {
+        let name = spawn.createCreep(bodyCosts.generateBalancedCreep(spawn.room.energyCapacityAvailable), nameGenerator.nameCreep('wallWart'), {
             role: role.wallWart,
-            working: false,
-            repairWalls: repairWalls === undefined ? false : repairWalls
+            working: false
         });
         if (isNaN(name)) {
             console.log("Spawning wall wart " + name);

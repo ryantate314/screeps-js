@@ -1,6 +1,7 @@
 const role = require('./role.enum');
 const nameGenerator = require('./nameGenerator');
 const sourceFinder = require('./sourceFinder');
+const bodyCosts = require('./bodyCosts');
 
 /*
  * Harvest energy and take it to spawn
@@ -71,7 +72,7 @@ module.exports = {
                     filter = x => x.structureType != STRUCTURE_STORAGE;
                 }
                 //Ignore energy at the bottom of the map, which is reserved for upgrading
-                source = sourceFinder.findSource(creep, x => x.pos.x != 35 && filter(x));
+                source = sourceFinder.findSource(creep, x => x.pos.y < 25 && filter(x));
                 if (source) {
                     //Found source
                     let result = source.extract();
@@ -82,9 +83,40 @@ module.exports = {
             }
         }
     },
+    /**
+     * 
+     * @param {StructureSpawn} spawn 
+     */
     spawn: function(spawn) {
-        //Early game adds 2 work and 2 carry
-        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('harvester'), {
+        
+        //determine optimal harvester.
+        let body = [];
+        let containers = spawn.room.find(FIND_STRUCTURES, {
+            filter: x => x.structureType == STRUCTURE_CONTAINER
+        });
+        let miners = spawn.room.find(FIND_MY_CREEPS, {
+            filter: x => x.memory.role == role.miner
+        });
+        //If there are miners in place, spawn a carrying creep.
+        if (containers.length == miners.length) {
+            //Leave 1 work unit in case they need to mine in a pinch
+            body.push(WORK);
+            body.push(CARRY);
+            body.push(MOVE);
+            //Subtract the cost of the base segment
+            let energyLeft = spawn.room.energyCapacityAvailable - bodyCosts.getCost([WORK, CARRY, MOVE]);
+            let numSegments = Math.floor(energyLeft / bodyCosts.getCost([CARRY, CARRY, MOVE]));
+            for (let i = 0; i < numSegments; i++) {
+                body.push(CARRY);
+                body.push(CARRY);
+                body.push(MOVE);
+            }
+        }
+        //Spawn a balanced creep because the creep may need to mine
+        else {
+            body = bodyCosts.generateBalancedCreep(spawn.room.energyCapacityAvailable);
+        }
+        let name = spawn.createCreep(body, nameGenerator.nameCreep('harvester'), {
             role: role.harvester,
             working: false
         });

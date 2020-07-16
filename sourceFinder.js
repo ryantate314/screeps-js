@@ -28,7 +28,8 @@ module.exports = {
         if (container) {
             let containerDistance = creep.pos.getRangeTo(container);
             //Choose the container if it's closer, as the crow files. Would like to do this by path length
-            if (containerDistance < sourceDistance + 2) {
+            //Handle the case where there are no flowing energy sources by checking for nan
+            if (isNaN(source) || containerDistance < (sourceDistance + 2)) {
                 //console.log(creep.name + " found a container");
                 source = container;
                 extract = () => {

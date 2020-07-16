@@ -12,6 +12,7 @@ const roleHarvester = require('./role.harvester');
 const role = require('./role.enum');
 const nameGenerator = require('./nameGenerator');
 const sourceFinder = require('./sourceFinder');
+const bodyCosts = require('./bodyCosts');
 
 module.exports = {
     /**
@@ -71,7 +72,7 @@ module.exports = {
      * @param {StructureSpawn} spawn 
      */
     spawn: function(spawn) {
-        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('builder'), {
+        let name = spawn.createCreep(bodyCosts.generateBalancedCreep(spawn.room.energyCapacityAvailable), nameGenerator.nameCreep('builder'), {
             role: role.builder,
             working: false,
             spawnRoom: spawn.room.name

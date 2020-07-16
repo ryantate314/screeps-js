@@ -11,6 +11,7 @@ const role = require('./role.enum');
 const roleBuilder = require('./role.builder');
 const nameGenerator = require('./nameGenerator');
 const sourceFinder = require('./sourceFinder');
+const bodyCosts = require('./bodyCosts');
 
 module.exports = {
     /**
@@ -65,8 +66,13 @@ module.exports = {
             }
         }
     },
+    /**
+     * 
+     * @param {StructureSpawn} spawn 
+     * @param {*} repairWalls 
+     */
     spawn: function(spawn, repairWalls) {
-        let name = spawn.createCreep([WORK, CARRY, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('repairer'), {
+        let name = spawn.createCreep(bodyCosts.generateBalancedCreep(spawn.room.energyCapacityAvailable), nameGenerator.nameCreep('repairer'), {
             role: role.repairer,
             working: false,
             spawnRoom: spawn.room.name
