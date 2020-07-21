@@ -72,7 +72,8 @@ module.exports = {
      * @param {*} repairWalls 
      */
     spawn: function(spawn, repairWalls) {
-        let name = spawn.createCreep(bodyCosts.generateBalancedCreep(spawn.room.energyCapacityAvailable), nameGenerator.nameCreep('repairer'), {
+        let energy = Math.min(600, spawn.room.energyCapacityAvailable);
+        let name = spawn.createCreep(bodyCosts.generateBalancedCreep(energy), nameGenerator.nameCreep('repairer'), {
             role: role.repairer,
             working: false,
             spawnRoom: spawn.room.name

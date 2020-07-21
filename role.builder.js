@@ -33,7 +33,9 @@ module.exports = {
 
             //If a creep wanders outside its spawn room, send it back
             if (creep.memory.spawnRoom && creep.room.name != creep.memory.spawnRoom) {
-                creep.moveTo(new RoomPosition(25, 25, creep.memory.spawnRoom));
+                creep.moveTo(new RoomPosition(25, 25, creep.memory.spawnRoom), {
+                    reusePath: 15
+                });
                 return;
             }
 
