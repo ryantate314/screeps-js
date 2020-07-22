@@ -91,8 +91,12 @@ module.exports = {
         
         let container = spawn.pos.findClosestByPath(containers);
 
+        //Each work unit mines 2 energy per tick
+        //Each source regens after 300 ticks
+        //Each source contains 3000 energy
+        //Maths yield 5 work units will drain the source before regen
         if (container) {
-            let name = spawn.createCreep([WORK, WORK, WORK, WORK, WORK, MOVE], nameGenerator.nameCreep('miner'), {
+            let name = spawn.createCreep([WORK, WORK, WORK, WORK, WORK, MOVE, MOVE], nameGenerator.nameCreep('miner'), {
                 role: role.miner,
                 working: false,
                 containerId: container.id

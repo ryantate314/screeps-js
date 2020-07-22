@@ -13,5 +13,6 @@ module.exports = {
     upgrader: 'upgrader',
     repairer: 'repairer',
     miner: 'miner',
-    wallWart: 'wallWart'
+    wallWart: 'wallWart',
+    longDistanceHarvester: 'longDistanceHarvester'
 };
