@@ -126,4 +126,57 @@ module.exports = function() {
         roleDefender.spawn(room.find(FIND_MY_SPAWNS)[0], false);
     };
 
+    Room.prototype.buildRoads = function() {
+        let room = this;
+
+        let spawns = room.find(FIND_MY_SPAWNS);
+        let sources = room.find(FIND_SOURCES);
+
+        if (spawns.length == 0)
+            return;
+
+        const getStructures = (item) => item.type == LOOK_STRUCTURES || item.type == LOOK_CONSTRUCTION_SITES;
+
+        let spawn = spawns[0];
+
+        //Build roads to sources
+        for (let source of sources) {
+            let path = room.findPath(spawn.pos, source.pos, {
+                ignoreCreeps: true,
+                range: 2,
+                maxRooms: 1
+            });
+
+            console.log("Path length " + path.length + " to source " + source.x + "," + source.y);
+
+            for (let step of path) {
+                let items = room.lookAt(step.x, step.y);
+                
+                if (_.filter(items, getStructures).length == 0) {
+                    //console.log("Placing road at " + step.x + ", " + step.y);
+                    room.createConstructionSite(step.x, step.y, STRUCTURE_ROAD);
+                }
+            }
+        }//end foreach source
+
+        if (room.controller != null) {
+            let path = room.findPath(spawn.pos, room.controller.pos, {
+                ignoreCreeps: true,
+                range: 3,
+                maxRooms: 1
+            });
+
+            console.log("Path length " + path.length + " to controller");
+
+            for (let step of path) {
+                let items = room.lookAt(step.x, step.y);
+                
+                if (_.filter(items, getStructures).length == 0) {
+                    //console.log("Placing road at " + step.x + ", " + step.y);
+                    room.createConstructionSite(step.x, step.y, STRUCTURE_ROAD);
+                }
+            }
+        }
+    };
+
 };
