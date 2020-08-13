@@ -159,6 +159,27 @@ module.exports = function() {
             }
         }//end foreach source
 
+        //Place roads going right up to each container
+        let containers = room.find(FIND_STRUCTURES, {
+            filter: x => x.structureType == STRUCTURE_CONTAINER
+        });
+        for (let container of containers) {
+            let path = room.findPath(spawn.pos, container.pos, {
+                ignoreCreeps: true,
+                range: 1,
+                maxRooms: 1
+            });
+
+            for (let step of path) {
+                let items = room.lookAt(step.x, step.y);
+                
+                if (_.filter(items, getStructures).length == 0) {
+                    //console.log("Placing road at " + step.x + ", " + step.y);
+                    room.createConstructionSite(step.x, step.y, STRUCTURE_ROAD);
+                }
+            }
+        }
+
         if (room.controller != null) {
             let path = room.findPath(spawn.pos, room.controller.pos, {
                 ignoreCreeps: true,

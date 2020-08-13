@@ -2,6 +2,7 @@ const role = require('./role.enum');
 const nameGenerator = require('./nameGenerator');
 const sourceFinder = require('./sourceFinder');
 const bodyCosts = require('./bodyCosts');
+const memoryCache = require('./memoryCache');
 
 /*
  * Harvest energy and take it to spawn
@@ -52,6 +53,32 @@ module.exports = {
                 if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(structure);
                 }
+            }
+            //Else if there are no structures to fill
+            else if (creep.store[RESOURCE_ENERGY] == creep.store.getCapacity(RESOURCE_ENERGY)) {
+                //Creep is full
+                let closestSourceId = memoryCache.getOrLookup(creep, "closestSource", () => {
+                    let value = creep.pos.findClosestByRange(FIND_SOURCES);
+                    return {
+                        value: value === null ? null : value.id,
+                        duration: 5
+                    };
+                });
+                let closestSource = Game.getObjectById(closestSourceId);
+                //Move away from the source to make room.
+                if (closestSource != null && creep.pos.getRangeTo(closestSource.pos) <= 2) {
+                    let path = PathFinder.search(creep.pos, {
+                        pos: closestSource.pos,
+                        range: 3
+                    }, {
+                        flee: true
+                    });
+                    creep.moveTo(path.path[0]);
+                }
+            }
+            else {
+                //Creep is not full. Top off.
+                creep.memory.working = false;
             }
         }
         else {

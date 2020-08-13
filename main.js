@@ -1,4 +1,5 @@
 require('./prototype.room')();
+require('./prototype.source')();
 const roleHarvester = require('role.harvester');
 const roleUpgrader = require('role.upgrader');
 const roleBuilder = require('./role.builder');
