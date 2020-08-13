@@ -14,5 +14,7 @@ module.exports = {
     repairer: 'repairer',
     miner: 'miner',
     wallWart: 'wallWart',
-    longDistanceHarvester: 'longDistanceHarvester'
+    longDistanceHarvester: 'longDistanceHarvester',
+    defender: 'defender',
+    deathMarch: 'deadCreepWalking'
 };

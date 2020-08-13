@@ -14,6 +14,7 @@ module.exports = {
      * @param {Creep} creep 
      */
     run: function(creep) {
+
         if (creep.memory.working == true && creep.carry.energy == 0) {
             //Finished emptying. Need to harvest.
             creep.memory.working = false;
@@ -25,7 +26,7 @@ module.exports = {
                 const lifeTime = 1500;
                 let numTrips = Math.floor(lifeTime / tripTime); //Number of trips the creep will make in its lifetime
                 let costPerTrip = Math.ceil(creep.memory.cost / numTrips); //The cost of the creep which it must make back over each trip
-                console.log(creep.name + " must have a carrying capacity of " + costPerTrip + " or more.");
+                //console.log(creep.name + " must have a carrying capacity of " + costPerTrip + " or more.");
 
                 creep.memory.isWorthIt = creep.store.getCapacity(RESOURCE_ENERGY) > costPerTrip;
                 this._setCapacityRequired(Game.rooms[creep.memory.homeRoom], creep.memory.targetRoom, creep.memory.sourceIndex, costPerTrip);
@@ -35,8 +36,7 @@ module.exports = {
                 //If the creep won't make it there and back, go ahead and die.
                 let averageTripTime = _.sum(creep.memory.trips) / creep.memory.trips.length;
                 if (creep.ticksToLive < averageTripTime) {
-                    console.log(creep.name + " committed suicide to keep from dying away from home.");
-                    creep.suicide();
+                    creep.memory.role = role.deathMarch;
                 }
             }
             creep.memory.tripStart = Game.time;
@@ -93,7 +93,19 @@ module.exports = {
             if (creep.room.name == creep.memory.targetRoom) {
                 //Creep is in the target room
                 
-                let source = creep.room.find(FIND_SOURCES)[creep.memory.sourceIndex];
+                //Sort by position, because find() results are non-deterministic
+                let source = creep.room.find(FIND_SOURCES).sort((a, b) => {
+                    if (a.pos.x > b.pos.x)
+                        return -1;
+                    else if (a.pos.x < b.pos.x)
+                        return 1;
+                    else if (a.pos.y > b.pos.y)
+                        return -1;
+                    else if (a.pos.y < b.pos.y)
+                        return 1;
+                    else
+                        return 0;
+                })[creep.memory.sourceIndex];
                 if (source) {
                     //Found source
                     let result = creep.harvest(source);
@@ -167,7 +179,7 @@ module.exports = {
      */
     _getStats: function(sourceRoom, targetRoomName, sourceIndex) {
         let source = _.find(sourceRoom.memory.foreignEnergySources, x => x.name == targetRoomName
-            && x.index == sourceIndex);
+            && x.sourceIndex == sourceIndex);
         return source;
     },
     /**
@@ -182,13 +194,6 @@ module.exports = {
         let source = this._getStats(sourceRoom, targetRoomName, sourceIndex);
         if (source) {
             source.minCapacity = Math.ceil((source.minCapacity + capacity) / 2);
-        }
-        else {
-            sourceRoom.memory.foreignEnergySources.push({
-                name: targetRoomName,
-                index: sourceIndex,
-                minCapacity: capacity
-            });
         }
     }
 

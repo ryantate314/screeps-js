@@ -40,10 +40,11 @@ module.exports = {
             let structures = spawning.concat(towers);
 
             //Prioritize spawning if energy is at half capacity
-            if (creep.room.energyAvailable < creep.room.energyCapacityAvailable / 2) {
-                structures = spawning;
-            }
-            else if (spawning.length == 0 && towers.length == 0 && storage.length > 0) {
+            // if (creep.room.energyAvailable < creep.room.energyCapacityAvailable / 2) {
+            //     structures = spawning;
+            // }
+            //else if
+            if (spawning.length == 0 && towers.length == 0 && storage.length > 0) {
                 structures = storage;
             }
             let structure = creep.pos.findClosestByPath(structures);
@@ -71,8 +72,7 @@ module.exports = {
                 if (creep.room.energyAvailable == creep.room.energyCapacityAvailable) {
                     filter = x => x.structureType != STRUCTURE_STORAGE;
                 }
-                //Ignore energy at the bottom of the map, which is reserved for upgrading
-                source = sourceFinder.findSource(creep, x => x.pos.y < 25 && filter(x));
+                source = sourceFinder.findSource(creep, x => filter(x));
                 if (source) {
                     //Found source
                     let result = source.extract();
@@ -98,7 +98,7 @@ module.exports = {
             filter: x => x.memory.role == role.miner
         });
         //If there are miners in place, spawn a carrying creep.
-        if (containers.length == miners.length) {
+        if (containers.length > 0 && containers.length == miners.length) {
             //Leave 1 work unit in case they need to mine in a pinch
             body.push(WORK);
             body.push(CARRY);

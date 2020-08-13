@@ -7,6 +7,8 @@ const role = require('./role.enum');
 const roleMiner = require('./role.miner');
 const roleWallWart = require('./role.wallWart');
 const roleLongDistanceHarvester = require('./role.longDistanceHarvester');
+const roleDefender = require('./role.defender');
+const { random } = require('lodash');
 
 module.exports.loop = function() {
 
@@ -20,12 +22,17 @@ module.exports.loop = function() {
 
     let spawn = Game.spawns.Spawn1;
 
-    defendRoom(spawn.room.name);
+    try {
+        defendRoom(spawn.room.name);
+    }
+    catch (err) {
+        console.log("main.defendRoom(): " + err);
+    }
     setStorageLevel(spawn.room);
 
     const minNumberOfHarvesters = 3;
     const minNumberOfUpgraders = 3;
-    const minNumberOfRepairers = 3;
+    const minNumberOfRepairers = 2;
     let numConstructionSites = spawn.room.find(FIND_CONSTRUCTION_SITES).length;
     const minNumberOfBuilders = numConstructionSites > 0 ? Math.min(3, numConstructionSites) : 1;
     const minNumberOfWallWarts = 1;
@@ -40,97 +47,175 @@ module.exports.loop = function() {
     let numberOfWallWarts = _.sum(Game.creeps, x => x.memory.role == role.wallWart);
     let numberOfMiners = _.sum(Game.creeps, x => x.memory.role == role.miner);
 
-    
-
+    let invaders = spawn.room.find(FIND_HOSTILE_CREEPS);
+    let defenders = spawn.room.find(FIND_MY_CREEPS, {
+        filter: x => x.memory.role == role.defender
+    });
 
     let numberOfCreeps = Object.keys(Game.creeps).length;
 
-    if (numberOfHarvestors < minNumberOfHarvesters) {
-        if (numberOfHarvestors >= 1) {
-            roleHarvester.spawn(spawn);
+    try {
+        if (invaders.length > defenders.length) {
+            roleDefender.spawn(spawn, false);
+        }
+        else if (numberOfHarvestors < minNumberOfHarvesters) {
+            if (numberOfHarvestors >= 1) {
+                roleHarvester.spawn(spawn);
+            }
+            else {
+                roleHarvester.spawnBasic(spawn);
+            }
+        }
+        else if (numberOfUpgraders < minNumberOfUpgraders) {
+            roleUpgrader.spawn(spawn);
+        }
+        else if (numberOfRepairers < minNumberOfRepairers) {
+            roleRepairer.spawn(spawn);
+        }
+        else if (numberOfBuilders < minNumberOfBuilders) {
+            roleBuilder.spawn(spawn);
+        }
+        else if (numberOfMiners < numContainers) {
+            roleMiner.spawn(spawn);
+        }
+        else if (numberOfWallWarts < minNumberOfWallWarts) {
+            roleWallWart.spawn(spawn);
         }
         else {
-            roleHarvester.spawnBasic(spawn);
-        }
-    }
-    else if (numberOfUpgraders < minNumberOfUpgraders) {
-        roleUpgrader.spawn(spawn);
-    }
-    else if (numberOfRepairers < minNumberOfRepairers) {
-        roleRepairer.spawn(spawn);
-    }
-    else if (numberOfBuilders < minNumberOfBuilders) {
-        roleBuilder.spawn(spawn);
-    }
-    else if (numberOfMiners < numContainers) {
-        roleMiner.spawn(spawn);
-    }
-    else if (numberOfWallWarts < minNumberOfWallWarts) {
-        roleWallWart.spawn(spawn);
-    }
-    else {
-        //Determine if long distance harvesters are spawned
-        /*
-         * To configure a long distance harverster, create a memory element in the spawn's
-         * room in the form:
-         * {
-         *      foreignEnergySources: [
-         *          {
-         *              name: "<room name>",
-         *              index: <array index, depending on number of sources in the room>
-         *          }
-         *      ]
-         * }
-         */
-        if (spawn.room.memory.foreignEnergySources !== undefined) {
-            for (let source of spawn.room.memory.foreignEnergySources) {
-                let harvesters = _.filter(Game.creeps, x => x.memory.role == role.longDistanceHarvester
-                                                            && x.memory.targetRoom == source.name
-                                                            && x.memory.sourceIndex == source.index);
-                if (harvesters.length < source.numHarvesters) {
-                    roleLongDistanceHarvester.spawn(spawn, source.distanceFactor, source.name, source.index);
+            //Determine if long distance harvesters are spawned
+            /*
+             * To configure a long distance harverster, use Room.addLongDistanceSource(...)
+             */
+            if (spawn.room.memory.foreignEnergySources !== undefined) {
+                for (let source of spawn.room.memory.foreignEnergySources) {
+                    let harvesters = _.filter(Game.creeps, x => x.memory.role == role.longDistanceHarvester
+                                                                && x.memory.targetRoom == source.name
+                                                                && x.memory.sourceIndex == source.sourceIndex);
+                    if (harvesters.length < source.numHarvesters) {
+                        roleLongDistanceHarvester.spawn(spawn, source.distanceFactor, source.name, source.sourceIndex);
+                    }
                 }
             }
         }
     }
+    catch (err) {
+        console.log("main.js - Error spawning: " + err);
+    }
+    
 
     for (let name in Game.creeps) {
-        let creep = Game.creeps[name];
-        switch (creep.memory.role) {
-            case role.harvester:
-                roleHarvester.run(creep);
-                break;
-            case role.upgrader:
-                roleUpgrader.run(creep);
-                break;
-            case role.builder:
-                roleBuilder.run(creep);
-                break;
-            case role.repairer:
-                roleRepairer.run(creep);
-                break;
-            case role.miner:
-                roleMiner.run(creep);
-                break;
-            case role.wallWart:
-                roleWallWart.run(creep);
-                break;
-            case role.longDistanceHarvester:
-                roleLongDistanceHarvester.run(creep);
-                break;
+        try {
+            let creep = Game.creeps[name];
+            switch (creep.memory.role) {
+                case role.harvester:
+                    roleHarvester.run(creep);
+                    break;
+                case role.upgrader:
+                    roleUpgrader.run(creep);
+                    break;
+                case role.builder:
+                    roleBuilder.run(creep);
+                    break;
+                case role.repairer:
+                    roleRepairer.run(creep);
+                    break;
+                case role.miner:
+                    roleMiner.run(creep);
+                    break;
+                case role.wallWart:
+                    roleWallWart.run(creep);
+                    break;
+                case role.longDistanceHarvester:
+                    roleLongDistanceHarvester.run(creep);
+                    break;
+                case role.defender:
+                    roleDefender.run(creep);
+                    break;
+                case "deadCreepWalking":
+                    if (creep.memory.homeRoom && creep.memory.homeRoom !== creep.room.name) {
+                        let exit = creep.room.findExitTo(creep.memory.homeRoom);
+                        creep.moveTo(creep.pos.findClosestByPath(exit));
+                        break;
+                    }
+
+                    let spawn = creep.pos.findClosestByPath(FIND_MY_SPAWNS);      
+                    if (creep.pos.isNearTo(spawn)) {
+                        spawn.recycleCreep(creep);
+                    }
+                    else {
+                        creep.moveTo(spawn);
+                    }
+                    break;
+            }
         }
-    }
+        catch (ex) {
+            console.log("Error executing run");
+            console.log(ex);
+        }
+    }//End foreach creep
 
     function defendRoom(roomName) {
         var hostiles = Game.rooms[roomName].find(FIND_HOSTILE_CREEPS);
-        if(hostiles.length > 0) {
-            //var username = hostiles[0].owner.username;
-            //Game.notify(`User ${username} spotted in room ${roomName}`);
-            var towers = Game.rooms[roomName].find(
-                FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_TOWER}});
-            towers.forEach(tower => tower.attack(hostiles[0]));
-        }
-    }
+        var injuredCreeps = Game.rooms[roomName].find(FIND_MY_CREEPS, {
+            filter: x => x.hits < x.hitsMax
+        });
+
+        let towers = Game.rooms[roomName].find(FIND_MY_STRUCTURES, {
+            filter: x => x.structureType == STRUCTURE_TOWER
+        });
+        for (let tower of towers) {
+
+            //Use probability to determine if we are going to attack or heal
+            let attackRatio = 0.3;
+            let attack = _.random(1, 1 / attackRatio) == 1;
+
+            if ((hostiles.length > 0 && injuredCreeps.length > 0 && attack)
+                || (hostiles.length > 0 && injuredCreeps.length == 0))
+            {
+                //Attack
+                //var username = hostiles[0].owner.username;
+                //Game.notify(`User ${username} spotted in room ${roomName}`);
+                tower.attack(tower.pos.findClosestByRange(hostiles));
+            }
+            else if (injuredCreeps.length > 0) {
+
+                //Sort injured creeps by priority
+                injuredCreeps = injuredCreeps.sort((a, b) => {
+                    let aPriority = 0;
+                    let bPriority = 0;
+        
+                    //Prioritize defenders
+                    if (a.memory.role == role.defender) {
+                        aPriority++;
+                    }
+                    if (b.memory.role == role.defender) {
+                        bPriority++;
+                    }
+        
+                    //Prioritize the bigger creep
+                    aPriority += _.map(_.filter(a.body, x => x == ATTACK || x == RANGED_ATTACK || x == HEAL), x => x.length);
+                    bPriority += _.map(_.filter(b.body, x => x == ATTACK || x == RANGED_ATTACK || x == HEAL), x => x.length);
+        
+                    //Give more wounded creep priority to keep them alive
+                    let aHealthRatio = a.hits / a.hitsMax;
+                    let bHealthRatio = b.hits / b.hitsMax;
+                    if (aHealthRatio < bHealthRatio)
+                        aPriority++;
+                    else if (bHealthRatio < aHealthRatio)
+                        bPriority++;
+        
+                    if (aPriority > bPriority)
+                        return -1;
+                    else if (aPriority < bPriority)
+                        return 1;
+                    else
+                        return 0;
+                });
+
+                tower.heal(injuredCreeps[0]);
+            }
+        }//End foreach tower
+    }//End defendRoom()
 
     /**
      * 

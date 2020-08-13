@@ -5,6 +5,8 @@
 const role = require("./role.enum");
 const nameGenerator = require("./nameGenerator");
 const sourceFinder = require("./sourceFinder");
+const bodyCosts = require("./bodyCosts");
+const roleHarvester = require("./role.harvester");
 
 module.exports = {
     /**
@@ -23,6 +25,15 @@ module.exports = {
         }
     
         if (creep.memory.working == true) {
+
+            //If no harvesters in room, default to a harvester
+            if (creep.room.find(FIND_MY_CREEPS, {
+                filter: x => x.memory.role == role.harvester
+            }).length == 0) {
+                roleHarvester.run(creep);
+                return;
+            }
+
             let transferResult = creep.upgradeController(controller);
             if (transferResult == ERR_NOT_IN_RANGE) {
                 creep.moveTo(controller);
@@ -36,8 +47,6 @@ module.exports = {
                 if (harvestResult == ERR_NOT_IN_RANGE) {
                     let moveResult = creep.moveTo(source.source);
 
-                        //Move down south towards the controller even when the source is busy
-                        //TODO get this working
                     if (moveResult == ERR_INVALID_TARGET && creep.pos.getRangeTo(controller) > 10) {
                         console.log("moving upgrader to controller because full up");
                         creep.moveTo(controller);
@@ -51,7 +60,7 @@ module.exports = {
         }//End if working
     },
     spawn: function(spawn) {
-        let name = spawn.createCreep([WORK, CARRY, WORK, MOVE, WORK, CARRY, MOVE], nameGenerator.nameCreep('upgrader'), {
+        let name = spawn.createCreep(bodyCosts.generateBalancedCreep(spawn.room.energyCapacityAvailable), nameGenerator.nameCreep('upgrader'), {
             role: role.upgrader,
             working: false
         });
