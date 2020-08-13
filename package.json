@@ -1,0 +1,23 @@
+{
+  "name": "screeps-js",
+  "version": "1.0.0",
+  "description": "Fallback: Upgrader\r ### Repairer\r Fallback: Builder\r ### Wall Wart\r Fallback: Repairer\r ### Miner\r ### Long Distance Harvester",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryantate314/screeps-js.git"
+  },
+  "author": "Ryan Tate",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ryantate314/screeps-js/issues"
+  },
+  "homepage": "https://github.com/ryantate314/screeps-js#readme",
+  "dependencies": {
+    "@types/screeps": "^3.1.3",
+    "lodash": "^4.17.19"
+  }
+}
