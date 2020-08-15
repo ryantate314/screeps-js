@@ -49,7 +49,7 @@ module.exports = {
                 structures = storage;
             }
             let structure = creep.pos.findClosestByPath(structures);
-            if (structure != undefined) {
+            if (structure != null) {
                 if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(structure);
                 }
@@ -82,30 +82,19 @@ module.exports = {
             }
         }
         else {
-            //Looked for dropped energy first
-            let source = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES, {
-                filter: x => x.resourceType == RESOURCE_ENERGY 
-                            && creep.pos.getRangeTo(x) < 10
-            });
-            if (source) {
-                if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(source);
-                }
+            //Looking for energy source
+
+            let filter = x => true;
+            //If the room is full, deposit in storage, not pull from storage. Prevents pulling out and immediately putting it back in.
+            if (creep.room.energyAvailable == creep.room.energyCapacityAvailable) {
+                filter = x => x.structureType != STRUCTURE_STORAGE;
             }
-            else {
-                //Look for energy source
-                let filter = x => true;
-                //If the room is full, deposit in storage, not pull from storage. Prevents pulling out and immediately putting it back in.
-                if (creep.room.energyAvailable == creep.room.energyCapacityAvailable) {
-                    filter = x => x.structureType != STRUCTURE_STORAGE;
-                }
-                source = sourceFinder.findSource(creep, x => filter(x));
-                if (source) {
-                    //Found source
-                    let result = source.extract();
-                    if (result == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(source.source);
-                    }
+            source = sourceFinder.findSource(creep, x => filter(x));
+            if (source) {
+                //Found source
+                let result = source.extract();
+                if (result == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(source.source);
                 }
             }
         }

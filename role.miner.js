@@ -29,7 +29,8 @@ module.exports = {
             container = Game.getObjectById(creep.memory.containerId);
         }
         
-        if (container && container.store[RESOURCE_ENERGY] < container.store.getCapacity(RESOURCE_ENERGY)) {
+        //Harvest even when full to increase Global Control Level
+        if (container/* && container.store[RESOURCE_ENERGY] < container.store.getCapacity(RESOURCE_ENERGY)*/) {
             //If we're sitting on top of the container
             if (creep.pos.getRangeTo(container) == 0) {
                 let source = creep.pos.findClosestByRange(FIND_SOURCES);

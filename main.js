@@ -79,7 +79,7 @@ module.exports.loop = function() {
         else if (numberOfMiners < numContainers) {
             roleMiner.spawn(spawn);
         }
-        else if (numberOfWallWarts < minNumberOfWallWarts) {
+        else if (numberOfWallWarts < minNumberOfWallWarts && (spawn.room.energyCapacityAvailable > 400 || spawn.room.controller.level > 3)) {
             roleWallWart.spawn(spawn);
         }
         else {

@@ -7,7 +7,7 @@ module.exports = {
      */
     getOrLookup: function(object, key, lookup) {
         if (object.memory[key] === undefined
-            || object.memory[key].added + object.memory[key].duration > Game.time)
+            || Game.time > object.memory[key].added + object.memory[key].duration)
         {
             let data = lookup();
             object.memory[key] = {

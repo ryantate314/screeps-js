@@ -147,7 +147,7 @@ module.exports = function() {
                 maxRooms: 1
             });
 
-            console.log("Path length " + path.length + " to source " + source.x + "," + source.y);
+            console.log("Path length " + path.length + " to source " + source.pos.x + "," + source.pos.y);
 
             for (let step of path) {
                 let items = room.lookAt(step.x, step.y);

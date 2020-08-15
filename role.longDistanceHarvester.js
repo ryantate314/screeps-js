@@ -15,6 +15,8 @@ module.exports = {
      */
     run: function(creep) {
 
+        
+
         if (creep.memory.working == true && creep.carry.energy == 0) {
             //Finished emptying. Need to harvest.
             creep.memory.working = false;
@@ -60,7 +62,8 @@ module.exports = {
                                 && x.energy < x.energyCapacity
                 });
                 let storage = creep.room.find(FIND_STRUCTURES, {
-                    filter: x => x.structureType == STRUCTURE_STORAGE
+                    filter: x => (x.structureType == STRUCTURE_STORAGE
+                                    || x.structureType == STRUCTURE_CONTAINER)
                                 && x.store[RESOURCE_ENERGY] < x.store.getCapacity(RESOURCE_ENERGY)
                 });
                 //By default, prioritize closest structure
@@ -75,20 +78,28 @@ module.exports = {
                     structures = storage;
                 }
                 let structure = creep.pos.findClosestByPath(structures);
-                if (structure != undefined) {
+                if (structure != null) {
                     if (creep.transfer(structure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(structure);
                     }
                 }
+                else {
+                    //All storage is full. Hang out near spawn.
+                    creep.moveTo(creep.pos.findClosestByRange(FIND_MY_SPAWNS));
+                }
             }
             else {
                 //Creep is not in the home room. Navigate there.
-                let exit = creep.room.findExitTo(creep.memory.homeRoom);
-                creep.moveTo(creep.pos.findClosestByPath(exit));
+                let spawn = Game.rooms[creep.memory.homeRoom].find(FIND_MY_SPAWNS)[0];
+                creep.moveTo(spawn, {
+                    reusePath: 25
+                });
             }
         }
         else {
             //Creep is empty. Find energy to harvest
+
+            let stats = this._getStats(Game.rooms[creep.memory.homeRoom], creep.memory.targetRoom, creep.memory.sourceIndex);
 
             if (creep.room.name == creep.memory.targetRoom) {
                 //Creep is in the target room
@@ -108,16 +119,40 @@ module.exports = {
                 })[creep.memory.sourceIndex];
                 if (source) {
                     //Found source
+                    
+                    //Cache position to better optimize path out of spawn room
+                    if (!stats.pos) {
+                        stats.pos = {
+                            x: source.pos.x,
+                            y: source.pos.y
+                        };
+                    }
+
                     let result = creep.harvest(source);
                     if (result == ERR_NOT_IN_RANGE) {
                         creep.moveTo(source);
                     }
                 }
+                else {
+                    console.log("Creep could not find source " + creep.memory.sourceIndex);
+                }
             }
             else {
                 //Creep is not in the target room. Navigate there
-                let exit = creep.room.findExitTo(creep.memory.targetRoom);
-                creep.moveTo(creep.pos.findClosestByRange(exit));
+                //console.log("Moving creep to room " + creep.memory.targetRoom + " from " + creep.room.name);
+
+                let target = null;
+                if (stats.pos) {
+                    //Moved to cached location to better improve pathfinding
+                    target = new RoomPosition(stats.pos.x, stats.pos.y, creep.memory.targetRoom);
+                }
+                else {
+                    //Blindly move to exit
+                    let exit = creep.room.findExitTo(creep.memory.targetRoom);
+                    target = creep.pos.findClosestByRange(exit);
+                }
+                creep.moveTo(target);
+                
             }
             
         }//End if working
@@ -143,6 +178,10 @@ module.exports = {
 
         let remainingEnergy = energy - bodyCosts.getCost(body);
         let numSegments = Math.floor(remainingEnergy / bodyCosts.getCost([MOVE, CARRY]));
+        if (numSegments == 0) {
+            console.log("Add energy or increase distance factor to spawn long distance harvester to " + targetRoomName + "[" + sourceIndex + "]");
+            return;
+        }
         for (let i = 0; i < numSegments; i++) {
             body.push(CARRY);
             body.push(MOVE);
@@ -152,7 +191,7 @@ module.exports = {
 
         const capacityPerSegment = 50;
         let estimatedCapacity = numSegments * capacityPerSegment;
-        if (stats != null && estimatedCapacity < stats.minCapacity) {
+        if (stats.minCapacity != null && estimatedCapacity < stats.minCapacity) {
             console.log("Spawning a long distance harvester to " + targetRoomName + "[" + sourceIndex + "] wouldn't have been worth it.");
             return;
         }
